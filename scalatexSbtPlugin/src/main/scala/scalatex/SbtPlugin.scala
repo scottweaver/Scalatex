@@ -74,12 +74,14 @@ object ScalatexReadme{
    *            properly insert links
    * @param autoResources Any other CSS or JS files you want to bundle into
    *                      index.html
+   * @param outputDir Directory where generated documents are created.  Defaults to `${projectId}/target/scalatex`.                      
    */
   def apply(projectId: String = "scalatex",
             wd: java.io.File,
             source: String,
             url: String,
-            autoResources: Seq[String] = Nil) = Project(
+            autoResources: Seq[String] = Nil,
+            outputDir: Option[File] =  None) = Project(
     id = projectId,
     base = file(projectId),
     settings = scalatex.SbtPlugin.projectSettings ++ Seq(
@@ -95,6 +97,8 @@ object ScalatexReadme{
         val generated = dir / "scalatex" / "Main.scala"
 
         val autoResourcesStrings = autoResources.map('"' + _ + '"').mkString(",")
+        
+        val theOutputDir = outputDir.getOrElse((target in Compile).value / "scalatex")
 
         val manualResourceStrings = manualResources.map('"' + _ + '"').mkString(",")
         IO.write(generated, s"""
@@ -102,7 +106,7 @@ object ScalatexReadme{
           object Main extends scalatex.site.Main(
             url = "$url",
             wd = ammonite.ops.Path("${fixPath(wd)}"),
-            output = ammonite.ops.Path("${fixPath((target in Compile).value / "scalatex")}"),
+            output = ammonite.ops.Path("${fixPath(theOutputDir)}"),
             extraAutoResources = Seq[String]($autoResourcesStrings).map(ammonite.ops.root/ammonite.ops.RelPath(_)),
             extraManualResources = Seq[String]($manualResourceStrings).map(ammonite.ops.root/ammonite.ops.RelPath(_)),
             scalatex.$source()
